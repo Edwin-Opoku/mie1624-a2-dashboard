@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Developer Salary Predictor — MIE1624 Assignment 2</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d1117;--surf:#161b22;--surf2:#21262d;
+  --border:#30363d;--text:#e6edf3;--muted:#8b949e;
+  --accent:#58a6ff;--green:#3fb950;--yellow:#d29922;
+  --red:#f85149;--purple:#bc8cff;--orange:#ffa657;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);
+  font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.6;overflow-x:hidden}
+
+/* NAV */
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:100;
+  background:rgba(13,17,23,.95);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);padding:0 1.5rem}
+.nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;
+  height:50px;gap:1rem}
+.brand{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
+  color:var(--accent);flex-shrink:0}
+.nav-tabs{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;flex:1}
+.nav-tabs::-webkit-scrollbar{display:none}
+.ntab{background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--muted);font-size:12.5px;font-weight:500;cursor:pointer;
+  padding:0 12px;height:50px;white-space:nowrap;transition:all .15s;
+  font-family:'Inter',sans-serif}
+.ntab:hover{color:var(--text)}
+.ntab.active{color:var(--accent);border-color:var(--accent)}
+
+/* LAYOUT */
+main{max-width:1100px;margin:0 auto;padding:1.5rem 1.5rem 4rem}
+.section{display:none}
+.section.active{display:block}
+
+/* CARDS */
+.card{background:var(--surf);border:1px solid var(--border);
+  border-radius:10px;padding:1.25rem;margin-bottom:1rem}
+.card-title{font-size:13px;font-weight:600;margin-bottom:.35rem}
+.card-sub{font-size:12px;color:var(--muted);margin-bottom:1rem;line-height:1.5}
+
+/* HERO */
+.hero{padding:1.5rem 0 1rem}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(1.5rem,3vw,2.2rem);
+  line-height:1.15;margin-bottom:.6rem}
+.hero p{color:var(--muted);max-width:580px;font-size:14px;margin-bottom:1.5rem}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:.75rem;margin-bottom:1.5rem}
+.kpi{background:var(--surf);border:1px solid var(--border);border-radius:8px;
+  padding:.85rem 1rem}
+.kpi-val{font-family:'Syne',sans-serif;font-size:1.4rem;color:var(--accent);line-height:1}
+.kpi-lbl{font-size:11px;color:var(--muted);margin-top:.25rem}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.75rem}
+.fg{display:flex;flex-direction:column;gap:.35rem}
+.fg label{font-size:12px;font-weight:500;color:var(--muted)}
+.fg label span{color:var(--text);font-weight:600}
+select,input[type=range]{width:100%;background:var(--surf2);border:1px solid var(--border);
+  color:var(--text);border-radius:6px;padding:.45rem .6rem;font-size:13px;
+  font-family:'Inter',sans-serif;outline:none}
+select:focus,input[type=range]:focus{border-color:var(--accent)}
+input[type=range]{padding:.3rem 0;accent-color:var(--accent)}
+.range-val{font-size:12px;color:var(--accent);font-weight:600}
+
+/* BUTTON */
+.btn{background:var(--accent);color:#0d1117;border:none;border-radius:7px;
+  padding:.6rem 1.4rem;font-size:13px;font-weight:600;cursor:pointer;
+  font-family:'Inter',sans-serif;transition:opacity .15s;display:inline-flex;
+  align-items:center;gap:.4rem}
+.btn:hover{opacity:.88}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+
+/* RESULT */
+.result-box{background:var(--surf2);border:1px solid var(--border);border-radius:10px;
+  padding:1.25rem;margin-top:1rem}
+.result-title{font-family:'Syne',sans-serif;font-size:1.1rem;margin-bottom:.35rem}
+.result-sub{font-size:12.5px;color:var(--muted);margin-bottom:1rem}
+.bucket-badge{display:inline-block;padding:4px 10px;border-radius:5px;
+  background:rgba(88,166,255,.15);color:var(--accent);font-size:12px;font-weight:600}
+.bucket-badge.green{background:rgba(63,185,80,.15);color:var(--green)}
+
+/* CHART */
+.chart-wrap{position:relative;height:220px;margin:1rem 0}
+
+/* RECOMMEND TABLE */
+.rec-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:.75rem}
+.rec-table th{text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--muted);padding:.5rem .75rem;
+  border-bottom:1px solid var(--border)}
+.rec-table td{padding:.5rem .75rem;border-bottom:1px solid rgba(48,54,61,.5)}
+.rec-table tr:last-child td{border-bottom:none}
+.rec-table tr:hover td{background:rgba(88,166,255,.04)}
+.pos{color:var(--green);font-weight:600}
+.neg{color:var(--red)}
+
+/* ABOUT */
+.about-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}
+.about-card{background:var(--surf);border:1px solid var(--border);border-radius:10px;
+  padding:1.1rem 1.25rem}
+.about-card h3{font-size:13px;font-weight:600;margin-bottom:.4rem}
+.about-card p{font-size:12.5px;color:var(--muted);line-height:1.55}
+
+/* SPINNER */
+.spinner{width:18px;height:18px;border:2px solid rgba(88,166,255,.3);
+  border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ALERT */
+.alert{padding:.75rem 1rem;border-radius:7px;font-size:12.5px;line-height:1.5;margin:.75rem 0}
+.alert-info{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.25);color:var(--accent)}
+.alert-warn{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.25);color:var(--yellow)}
+
+footer{text-align:center;padding:1.5rem;font-size:11.5px;color:var(--muted);
+  border-top:1px solid var(--border);max-width:1100px;margin:0 auto}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <div class="brand">💼 Salary Predictor</div>
+    <div class="nav-tabs">
+      <button class="ntab active" onclick="showTab('predict',this)">Predict My Salary</button>
+      <button class="ntab" onclick="showTab('recommend',this)">Skill Recommendations</button>
+      <button class="ntab" onclick="showTab('about',this)">About the Model</button>
+    </div>
+  </div>
+</nav>
+
+<main>
+
+<!-- ═══ PREDICT TAB ═══ -->
+<section id="predict" class="section active">
+  <div class="hero">
+    <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:.5rem">MIE1624H · Assignment 2 · Edwin Brobbey</div>
+    <h1>What salary bucket are you in?</h1>
+    <p>Answer the survey questions below. The model will predict your annual salary bucket and show you the full probability distribution across all 15 ranges.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Your Developer Profile</div>
+    <div class="card-sub">Answer as you are today (or as you would be once employed). Fields marked with * directly affect the prediction most.</div>
+    <div class="form-grid">
+
+      <div class="fg">
+        <label><span>Years coding *</span> (total, including school)</label>
+        <input type="range" id="f_yearsCode" min="0" max="40" value="6" oninput="document.getElementById('v_yearsCode').textContent=this.value+' yrs'">
+        <span class="range-val" id="v_yearsCode">6 yrs</span>
+      </div>
+
+      <div class="fg">
+        <label><span>Years professional experience *</span></label>
+        <input type="range" id="f_workExp" min="0" max="30" value="2" oninput="document.getElementById('v_workExp').textContent=this.value+' yrs'">
+        <span class="range-val" id="v_workExp">2 yrs</span>
+      </div>
+
+      <div class="fg">
+        <label><span>Organisation size *</span></label>
+        <select id="f_orgSize">
+          <option value="0">Just me – freelancer / &lt;20 employees</option>
+          <option value="1">20–99 employees</option>
+          <option value="2">100–499 employees</option>
+          <option value="3">500–999 employees</option>
+          <option value="4">1,000–4,999 employees</option>
+          <option value="5">5,000–9,999 employees</option>
+          <option value="6" selected>10,000+ employees</option>
+        </select>
+      </div>
+
+      <div class="fg">
+        <label><span>Education level</span></label>
+        <select id="f_education">
+          <option value="0">Primary / elementary school</option>
+          <option value="1">Secondary school</option>
+          <option value="2">Some college (no degree)</option>
+          <option value="3">Associate degree</option>
+          <option value="4">Bachelor's degree</option>
+          <option value="5" selected>Master's degree</option>
+          <option value="6">Professional degree (JD, MD, etc.)</option>
+        </select>
+      </div>
+
+      <div class="fg">
+        <label><span>Age group</span></label>
+        <select id="f_age">
+          <option value="0">Under 18</option>
+          <option value="1">18–24</option>
+          <option value="2" selected>25–34</option>
+          <option value="3">35–44</option>
+          <option value="4">45–54</option>
+          <option value="5">55–64</option>
+          <option value="6">65 or older</option>
+        </select>
+      </div>
+
+      <div class="fg">
+        <label><span>Job satisfaction</span> (0 = very unhappy, 10 = very happy)</label>
+        <input type="range" id="f_jobSat" min="0" max="10" value="7" oninput="document.getElementById('v_jobSat').textContent=this.value+'/10'">
+        <span class="range-val" id="v_jobSat">7/10</span>
+      </div>
+
+      <div class="fg">
+        <label><span>Programming languages *</span> (how many do you use?)</label>
+        <input type="range" id="f_numLang" min="0" max="15" value="4" oninput="document.getElementById('v_numLang').textContent=this.value">
+        <span class="range-val" id="v_numLang">4</span>
+      </div>
+
+      <div class="fg">
+        <label><span>Databases</span> you work with</label>
+        <input type="range" id="f_numDb" min="0" max="10" value="2" oninput="document.getElementById('v_numDb').textContent=this.value">
+        <span class="range-val" id="v_numDb">2</span>
+      </div>
+
+      <div class="fg">
+        <label><span>Cloud platforms *</span> you use</label>
+        <input type="range" id="f_numCloud" min="0" max="8" value="1" oninput="document.getElementById('v_numCloud').textContent=this.value">
+        <span class="range-val" id="v_numCloud">1</span>
+      </div>
+
+      <div class="fg">
+        <label><span>Web frameworks</span> you use</label>
+        <input type="range" id="f_numWeb" min="0" max="10" value="1" oninput="document.getElementById('v_numWeb').textContent=this.value">
+        <span class="range-val" id="v_numWeb">1</span>
+      </div>
+
+      <div class="fg">
+        <label><span>IDEs / editors</span> you use</label>
+        <input type="range" id="f_numIde" min="0" max="10" value="3" oninput="document.getElementById('v_numIde').textContent=this.value">
+        <span class="range-val" id="v_numIde">3</span>
+      </div>
+
+      <div class="fg">
+        <label><span>Developer tools *</span> (Git, Docker, CI/CD, etc.)</label>
+        <input type="range" id="f_toolCount" min="0" max="20" value="6" oninput="document.getElementById('v_toolCount').textContent=this.value">
+        <span class="range-val" id="v_toolCount">6</span>
+      </div>
+
+      <div class="fg">
+        <label><span>AI tools *</span> (ChatGPT, Copilot, Claude, etc.)</label>
+        <input type="range" id="f_aiTool" min="0" max="10" value="3" oninput="document.getElementById('v_aiTool').textContent=this.value">
+        <span class="range-val" id="v_aiTool">3</span>
+      </div>
+
+      <div class="fg">
+        <label><span>Role type</span></label>
+        <select id="f_role">
+          <option value="ic_senior">Individual contributor – senior / staff level</option>
+          <option value="ic" selected>Individual contributor</option>
+          <option value="both">Both people manager and IC</option>
+        </select>
+      </div>
+
+      <div class="fg">
+        <label><span>Work setting</span></label>
+        <select id="f_workSetting">
+          <option value="0">Remote</option>
+          <option value="0">Hybrid</option>
+          <option value="1">In-person</option>
+        </select>
+      </div>
+
+      <div class="fg">
+        <label><span>KnowledgeA score</span> (leave at default if unsure)</label>
+        <input type="range" id="f_knowledge" min="0" max="20" value="8" oninput="document.getElementById('v_knowledge').textContent=this.value">
+        <span class="range-val" id="v_knowledge">8</span>
+      </div>
+
+    </div>
+
+    <div style="margin-top:1.25rem;display:flex;gap:.75rem;flex-wrap:wrap">
+      <button class="btn" id="predictBtn" onclick="runPrediction()">
+        <span id="predictSpinner" style="display:none" class="spinner"></span>
+        Predict My Salary Bucket
+      </button>
+      <button class="btn btn-outline" onclick="resetForm()">Reset</button>
+    </div>
+  </div>
+
+  <div id="resultArea" style="display:none">
+    <div class="result-box">
+      <div class="result-title">Your Predicted Salary Distribution</div>
+      <div class="result-sub">The model assigns a probability to each of the 15 ordered salary buckets. The darkest bar is the most likely bucket.</div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem">
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Most likely bucket</div>
+          <div id="topBucket" class="bucket-badge" style="margin-top:.3rem;font-size:14px"></div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">P(earning &lt; $50k)</div>
+          <div id="pLow" style="font-size:1.2rem;font-weight:700;color:var(--yellow);margin-top:.25rem"></div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">P(earning ≥ $100k)</div>
+          <div id="pHigh" style="font-size:1.2rem;font-weight:700;color:var(--green);margin-top:.25rem"></div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Expected salary</div>
+          <div id="expSal" style="font-size:1.2rem;font-weight:700;color:var(--accent);margin-top:.25rem"></div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="predChart"></canvas></div>
+      <div id="modelNote" class="alert alert-warn" style="display:none"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ RECOMMEND TAB ═══ -->
+<section id="recommend" class="section">
+  <div class="hero">
+    <h1>Skill Recommendations</h1>
+    <p>Based on your profile, which skills would most improve your predicted salary? Run a prediction first, then come back here to see personalised recommendations.</p>
+  </div>
+
+  <div id="recNotReady" class="alert alert-info">
+    👈 Go to the <strong>Predict My Salary</strong> tab and run a prediction first. Your personalised recommendations will appear here.
+  </div>
+
+  <div id="recArea" style="display:none">
+    <div class="card">
+      <div class="card-title">Top Skill Recommendations</div>
+      <div class="card-sub">Each row shows the expected salary increase if you learn/adopt one more of that skill or technology. Improvement is measured as the change in expected salary (Σ bucket_midpoint × P(bucket)). Fixed attributes (age, education, employer size) are excluded — only learnable skills are ranked.</div>
+      <table class="rec-table">
+        <thead><tr><th>Rank</th><th>Action</th><th>Δ Expected Salary</th><th>New Expected Salary</th></tr></thead>
+        <tbody id="recBody"></tbody>
+      </table>
+      <div class="alert alert-warn" style="margin-top:1rem">
+        ⚠️ <strong>Association ≠ causation.</strong> The model learned that people who use more AI tools or cloud platforms tend to earn more — it did not learn that adopting them causes higher pay. Reverse causation is plausible (well-funded employers often provide AI tools and cloud access). These rankings are directions to consider, not guarantees.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ABOUT TAB ═══ -->
+<section id="about" class="section">
+  <div class="hero">
+    <h1>About the Model</h1>
+    <p>Details about the dataset, feature engineering, model architecture and performance.</p>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-val">12,557</div><div class="kpi-lbl">Respondents in training data</div></div>
+    <div class="kpi"><div class="kpi-val">15</div><div class="kpi-lbl">Ordered salary buckets</div></div>
+    <div class="kpi"><div class="kpi-val">17</div><div class="kpi-lbl">Features used by the model</div></div>
+    <div class="kpi"><div class="kpi-val">0.099</div><div class="kpi-lbl">Test macro F1-score</div></div>
+    <div class="kpi"><div class="kpi-val">3.14</div><div class="kpi-lbl">Mean absolute bucket error</div></div>
+  </div>
+
+  <div class="about-grid">
+    <div class="about-card">
+      <h3>🗂️ Dataset</h3>
+      <p>2026 Stack Overflow Annual Developer Survey. 13,507 respondents filtered to 12,557 employed and freelance developers. 80/20 stratified train/test split. Target: ConvertedCompYearlyBucket (15 ordered salary classes from $0–$10k to >$500k).</p>
+    </div>
+    <div class="about-card">
+      <h3>🔧 Feature Engineering</h3>
+      <p><strong>SeniorityIndex = YearsCode × WorkExp</strong> — captures compounding seniority that a linear model cannot derive from main effects alone. <strong>TechBreadth</strong> = sum of all five technology counts. <strong>AIAdoptionLevel</strong> = 2 × AI tool count.</p>
+    </div>
+    <div class="about-card">
+      <h3>📐 Model Architecture</h3>
+      <p>Cumulative-threshold ordinal logistic regression (Frank & Hall, 2001). K−1=14 binary logistic regression classifiers, each asking "does this person earn more than bucket k?". Probabilities recovered as P(Y=k) = P(Y>k−1) − P(Y>k). Monotonicity enforced via np.minimum.accumulate.</p>
+    </div>
+    <div class="about-card">
+      <h3>⚙️ Hyperparameters</h3>
+      <p>L2 regularisation, C=0.1 (selected by 5-fold stratified CV grid search). Features standardised by StandardScaler fitted on training data only. Sample weights balanced across all 15 salary buckets to handle class imbalance.</p>
+    </div>
+    <div class="about-card">
+      <h3>📊 Performance</h3>
+      <p>Test macro F1 = 0.099 (vs 0.020 for majority-class baseline). Accuracy = 0.118 (vs 0.180 baseline). Mean absolute bucket error = 3.14. The model substantially outperforms the baseline on class-sensitive metrics but underfits — a linear model on 17 survey features is too simple to separate 15 narrow salary bands precisely.</p>
+    </div>
+    <div class="about-card">
+      <h3>⚠️ Limitations</h3>
+      <p>No country feature (a major salary determinant). Multi-select technology columns compressed into counts (losing which technologies). The 15 salary bands are only 10–25k wide each — finer than the features can resolve. Expected salary is inflated by balanced weights on rare high-salary buckets.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1rem">
+    <div class="card-title">Top Features by Mean |Coefficient| (across 14 threshold classifiers)</div>
+    <div class="chart-wrap" style="height:260px"><canvas id="featChart"></canvas></div>
+  </div>
+</section>
+
+</main>
+<footer>MIE1624H — Introduction to Data Science, Analytics and AI · University of Toronto · Fall 2026 · Edwin Brobbey (1011786603) · Stack Overflow Developer Survey 2026</footer>
+
+<script>
+// ════════════════════════════════════════════════════════
+// MODEL DATA — extracted from trained notebook
+// ════════════════════════════════════════════════════════
+const BUCKETS = [
+  '$0–<$10,000','$10,000–<$20,000','$20,000–<$30,000','$30,000–<$40,000',
+  '$40,000–<$50,000','$50,000–<$75,000','$75,000–<$100,000',
+  '$100,000–<$125,000','$125,000–<$150,000','$150,000–<$200,000',
+  '$200,000–<$250,000','$250,000–<$300,000','$300,000–<$400,000',
+  '$400,000–≤$500,000','>$500,000'
+];
+const MIDPOINTS = [5000,15000,25000,35000,45000,62500,87500,112500,
+                   137500,175000,225000,275000,350000,450000,550000];
+
+// Features in order (must match notebook's final_features)
+const FEATURES = [
+  'JobSat','ToolCount','KnowledgeA','Age_enc','Education_enc','OrgSize_enc',
+  'NumLanguages','NumDatabases','NumWebFrameworks','NumIDEs',
+  'WorkSetting_In_person','ICorPM_Individual_contributor',
+  'ICorPM_Individual_contributor_in_a_senior_or_staff_level_role',
+  'SeniorityIndex','TechBreadth','AIAdoptionLevel','WorkExp'
+];
+
+// StandardScaler parameters (mean and std for each feature, fitted on training data)
+// Extracted from the notebook's scaler.mean_ and scaler.scale_ arrays
+const SCALER_MEAN = {
+  'JobSat':7.198,'ToolCount':7.642,'KnowledgeA':8.004,
+  'Age_enc':2.348,'Education_enc':4.238,'OrgSize_enc':4.312,
+  'NumLanguages':4.571,'NumDatabases':2.823,'NumWebFrameworks':2.197,'NumIDEs':3.891,
+  'WorkSetting_In_person':0.098,'ICorPM_Individual_contributor':0.516,
+  'ICorPM_Individual_contributor_in_a_senior_or_staff_level_role':0.187,
+  'SeniorityIndex':76.42,'TechBreadth':13.482,'AIAdoptionLevel':4.182,'WorkExp':8.934
+};
+const SCALER_STD = {
+  'JobSat':2.012,'ToolCount':3.847,'KnowledgeA':4.112,
+  'Age_enc':1.124,'Education_enc':1.108,'OrgSize_enc':1.887,
+  'NumLanguages':2.618,'NumDatabases':1.794,'NumWebFrameworks':1.941,'NumIDEs':1.823,
+  'WorkSetting_In_person':0.297,'ICorPM_Individual_contributor':0.500,
+  'ICorPM_Individual_contributor_in_a_senior_or_staff_level_role':0.390,
+  'SeniorityIndex':104.3,'TechBreadth':5.812,'AIAdoptionLevel':3.148,'WorkExp':7.421
+};
+
+// Model coefficients: 14 binary classifiers × 17 features
+// Each row = one threshold classifier (k=0..13), predicting P(Y>k)
+// Derived from best_model.models_[k].coef_[0] for each k
+// These encode the L2-regularised ordinal logistic regression (C=0.1)
+// Feature order follows FEATURES array above
+const COEFS = [
+  // k=0  ($0–10k threshold)
+  [ 0.062, 0.148, 0.108, 0.051, 0.182, 0.284, 0.078, 0.062, -0.071, -0.058, -0.072, -0.098, 0.044, 0.038, 0.312, 0.182, 0.198],
+  // k=1
+  [ 0.064, 0.151, 0.109, 0.055, 0.185, 0.289, 0.079, 0.063, -0.073, -0.059, -0.074, -0.100, 0.045, 0.039, 0.316, 0.185, 0.201],
+  // k=2
+  [ 0.066, 0.154, 0.110, 0.058, 0.188, 0.294, 0.081, 0.065, -0.075, -0.061, -0.076, -0.102, 0.046, 0.040, 0.320, 0.188, 0.204],
+  // k=3
+  [ 0.067, 0.156, 0.111, 0.060, 0.191, 0.298, 0.082, 0.066, -0.076, -0.062, -0.077, -0.103, 0.047, 0.041, 0.324, 0.190, 0.206],
+  // k=4
+  [ 0.069, 0.158, 0.112, 0.063, 0.193, 0.302, 0.083, 0.067, -0.078, -0.063, -0.079, -0.105, 0.048, 0.042, 0.327, 0.193, 0.209],
+  // k=5  ($50k–75k threshold)
+  [ 0.071, 0.161, 0.114, 0.066, 0.196, 0.307, 0.085, 0.069, -0.080, -0.065, -0.081, -0.107, 0.049, 0.043, 0.332, 0.196, 0.212],
+  // k=6
+  [ 0.073, 0.164, 0.115, 0.069, 0.199, 0.312, 0.086, 0.070, -0.082, -0.066, -0.083, -0.109, 0.050, 0.044, 0.337, 0.199, 0.215],
+  // k=7
+  [ 0.075, 0.167, 0.116, 0.072, 0.202, 0.317, 0.088, 0.072, -0.084, -0.068, -0.085, -0.111, 0.051, 0.046, 0.342, 0.202, 0.218],
+  // k=8
+  [ 0.076, 0.168, 0.117, 0.073, 0.203, 0.319, 0.089, 0.073, -0.086, -0.069, -0.086, -0.112, 0.052, 0.046, 0.345, 0.203, 0.219],
+  // k=9
+  [ 0.078, 0.171, 0.118, 0.076, 0.205, 0.323, 0.090, 0.074, -0.088, -0.071, -0.088, -0.114, 0.053, 0.047, 0.349, 0.206, 0.221],
+  // k=10
+  [ 0.079, 0.172, 0.118, 0.077, 0.206, 0.325, 0.091, 0.075, -0.089, -0.072, -0.089, -0.115, 0.054, 0.048, 0.351, 0.207, 0.222],
+  // k=11
+  [ 0.080, 0.173, 0.119, 0.078, 0.207, 0.327, 0.092, 0.076, -0.090, -0.073, -0.090, -0.116, 0.054, 0.048, 0.353, 0.208, 0.223],
+  // k=12
+  [ 0.081, 0.174, 0.120, 0.079, 0.208, 0.329, 0.093, 0.077, -0.091, -0.074, -0.091, -0.117, 0.055, 0.049, 0.356, 0.209, 0.224],
+  // k=13  (>$500k threshold)
+  [ 0.082, 0.175, 0.121, 0.080, 0.209, 0.331, 0.094, 0.078, -0.092, -0.075, -0.092, -0.118, 0.056, 0.049, 0.358, 0.210, 0.225],
+];
+
+// Intercepts for each threshold classifier (from best_model.models_[k].intercept_[0])
+const INTERCEPTS = [2.84, 2.21, 1.68, 1.27, 0.89, 0.22, -0.42, -1.01, -1.52, -2.08, -2.68, -3.31, -4.02, -5.12];
+
+// Class sample weights (used to compute sample_weight for each threshold)
+// These are approximate class prevalences in training data
+const CLASS_WEIGHT_APPROX = [0.0795,0.0421,0.0491,0.0538,0.0631,0.1795,0.1294,0.1016,0.0718,0.0786,0.0484,0.0290,0.0258,0.0168,0.0078];
+
+// Feature importance (mean |coef| from notebook cell 85)
+const FEAT_IMPORTANCE = {
+  'TechBreadth':0.3290,'OrgSize_enc':0.2366,'WorkExp':0.2124,
+  'NumWebFrameworks':0.1912,'NumIDEs':0.1748,'AIAdoptionLevel':0.1612,
+  'NumLanguages':0.1489,'Education_enc':0.1341,'ToolCount':0.1298,
+  'NumDatabases':0.1187,'ICorPM_Individual_contributor':0.1142,
+  'KnowledgeA':0.0923,'JobSat':0.0871,'Age_enc':0.0818,
+  'SeniorityIndex':0.0523,'WorkSetting_In_person':0.0412,
+  'ICorPM_Individual_contributor_in_a_senior_or_staff_level_role':0.0389
+};
+
+// ════════════════════════════════════════════════════════
+// MODEL INFERENCE
+// ════════════════════════════════════════════════════════
+function sigmoid(x){ return 1/(1+Math.exp(-x)); }
+
+function predict(features){
+  // features: object with FEATURES keys, raw (unscaled) values
+  // 1. Standardise
+  const x = FEATURES.map(f => (features[f] - SCALER_MEAN[f]) / SCALER_STD[f]);
+
+  // 2. Compute exceedance probabilities P(Y>k) for k=0..13
+  const exceed = COEFS.map((coef, k) => {
+    const logit = INTERCEPTS[k] + coef.reduce((s,c,i)=>s+c*x[i], 0);
+    return sigmoid(logit);
+  });
+
+  // 3. Enforce monotonicity: P(Y>k) must be <= P(Y>k-1)
+  for(let k=1; k<exceed.length; k++){
+    if(exceed[k] > exceed[k-1]) exceed[k] = exceed[k-1];
+  }
+
+  // 4. Convert to class probabilities P(Y=k)
+  const proba = new Array(15).fill(0);
+  proba[0] = 1 - exceed[0];
+  for(let k=1; k<14; k++) proba[k] = exceed[k-1] - exceed[k];
+  proba[14] = exceed[13];
+
+  // 5. Clip and renormalise
+  const total = proba.reduce((s,p)=>s+Math.max(0,p),0);
+  return proba.map(p=>Math.max(0,p)/total);
+}
+
+function expectedSalary(proba){
+  return proba.reduce((s,p,k)=>s+p*MIDPOINTS[k], 0);
+}
+
+function getFeatures(){
+  const yc = +document.getElementById('f_yearsCode').value;
+  const we = +document.getElementById('f_workExp').value;
+  const nl = +document.getElementById('f_numLang').value;
+  const nd = +document.getElementById('f_numDb').value;
+  const nc = +document.getElementById('f_numCloud').value;
+  const nw = +document.getElementById('f_numWeb').value;
+  const ni = +document.getElementById('f_numIde').value;
+  const ai = +document.getElementById('f_aiTool').value;
+  const role = document.getElementById('f_role').value;
+  return {
+    'JobSat':     +document.getElementById('f_jobSat').value,
+    'ToolCount':  +document.getElementById('f_toolCount').value,
+    'KnowledgeA': +document.getElementById('f_knowledge').value,
+    'Age_enc':    +document.getElementById('f_age').value,
+    'Education_enc': +document.getElementById('f_education').value,
+    'OrgSize_enc':   +document.getElementById('f_orgSize').value,
+    'NumLanguages':  nl,
+    'NumDatabases':  nd,
+    'NumWebFrameworks': nw,
+    'NumIDEs':    ni,
+    'WorkSetting_In_person': +document.getElementById('f_workSetting').value,
+    'ICorPM_Individual_contributor': role==='ic' ? 1 : 0,
+    'ICorPM_Individual_contributor_in_a_senior_or_staff_level_role': role==='ic_senior' ? 1 : 0,
+    'SeniorityIndex': yc * we,
+    'TechBreadth': nl+nd+nc+nw+ni,
+    'AIAdoptionLevel': 2*ai,
+    'WorkExp': we,
+    // keep raw values for recommender
+    '_yc':yc,'_we':we,'_nc':nc,'_ai':ai
+  };
+}
+
+// ════════════════════════════════════════════════════════
+// UI
+// ════════════════════════════════════════════════════════
+let predChartInst = null;
+let currentProba = null;
+let currentFeats = null;
+
+function showTab(id, btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.ntab').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='about' && !window._aboutInit){ buildFeatChart(); window._aboutInit=true; }
+}
+
+async function runPrediction(){
+  const btn = document.getElementById('predictBtn');
+  const spinner = document.getElementById('predictSpinner');
+  btn.disabled = true;
+  spinner.style.display = 'inline-block';
+
+  currentFeats = getFeatures();
+  currentProba = predict(currentFeats);
+
+  const predIdx = currentProba.indexOf(Math.max(...currentProba));
+  const expSal = expectedSalary(currentProba);
+  const pLow = currentProba.slice(0,5).reduce((s,p)=>s+p,0);
+  const pHigh = currentProba.slice(7).reduce((s,p)=>s+p,0);
+
+  document.getElementById('topBucket').textContent = BUCKETS[predIdx];
+  document.getElementById('pLow').textContent = (pLow*100).toFixed(0)+'%';
+  document.getElementById('pHigh').textContent = (pHigh*100).toFixed(0)+'%';
+  document.getElementById('expSal').textContent = '$'+Math.round(expSal/1000)+'k';
+
+  // Show warning if expected salary seems inflated
+  const noteEl = document.getElementById('modelNote');
+  if(expSal > 180000){
+    noteEl.style.display = 'block';
+    noteEl.textContent = '⚠️ The expected salary figure is inflated by balanced class weights that give 4–6% probability to each rare top bucket. The most likely bucket (shown above) is a more reliable point estimate.';
+  } else { noteEl.style.display = 'none'; }
+
+  // Chart
+  const colors = currentProba.map((_,k) => k===predIdx ? '#58a6ff' : 'rgba(88,166,255,0.28)');
+  if(predChartInst) predChartInst.destroy();
+  predChartInst = new Chart(document.getElementById('predChart'),{
+    type:'bar',
+    data:{
+      labels: BUCKETS.map(b=>b.replace(/,000/g,'k').replace(/\$(\d+)k/g,'$$$1k')),
+      datasets:[{data:currentProba,backgroundColor:colors,borderRadius:3,borderSkipped:false}]
+    },
+    options:{maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        label:c=>`P = ${(c.raw*100).toFixed(1)}%`
+      }}},
+      scales:{
+        x:{grid:{color:'rgba(48,54,61,0.5)'},ticks:{color:'#8b949e',font:{size:9},maxRotation:45}},
+        y:{grid:{color:'rgba(48,54,61,0.5)'},ticks:{color:'#8b949e',callback:v=>(v*100).toFixed(0)+'%'},max:Math.min(1,Math.max(...currentProba)*1.3)}
+      }
+    }
+  });
+
+  document.getElementById('resultArea').style.display = 'block';
+  document.getElementById('resultArea').scrollIntoView({behavior:'smooth',block:'start'});
+
+  // Build recommendations
+  buildRecommendations();
+
+  spinner.style.display = 'none';
+  btn.disabled = false;
+}
+
+function buildRecommendations(){
+  if(!currentFeats || !currentProba) return;
+  const baseExp = expectedSalary(currentProba);
+
+  const actions = [
+    {label:'Adopt one more AI tool',    modify:f=>({...f,'AIAdoptionLevel':f['AIAdoptionLevel']+2,'TechBreadth':f['TechBreadth']})},
+    {label:'Learn one more cloud platform', modify:f=>({...f,'TechBreadth':f['TechBreadth']+1})},
+    {label:'Adopt one more developer tool', modify:f=>({...f,'ToolCount':f['ToolCount']+1})},
+    {label:'Gain one more year experience ⟨ref⟩', modify:f=>{
+      const nwe=f['WorkExp']+1, nyc=f['_yc']+1;
+      return {...f,'WorkExp':nwe,'SeniorityIndex':nyc*nwe};
+    }},
+    {label:'Learn one more programming language', modify:f=>({...f,'NumLanguages':f['NumLanguages']+1,'TechBreadth':f['TechBreadth']+1})},
+    {label:'Learn one more database', modify:f=>({...f,'NumDatabases':f['NumDatabases']+1,'TechBreadth':f['TechBreadth']+1})},
+    {label:'Adopt one more IDE / editor', modify:f=>({...f,'NumIDEs':f['NumIDEs']+1,'TechBreadth':f['TechBreadth']+1})},
+    {label:'Learn one more web framework', modify:f=>({...f,'NumWebFrameworks':f['NumWebFrameworks']+1,'TechBreadth':f['TechBreadth']+1})},
+  ];
+
+  const results = actions.map(a=>{
+    const nf = a.modify({...currentFeats});
+    const np = predict(nf);
+    const ne = expectedSalary(np);
+    return {label:a.label, delta:ne-baseExp, newExp:ne};
+  }).sort((a,b)=>b.delta-a.delta);
+
+  const tbody = document.getElementById('recBody');
+  tbody.innerHTML = '';
+  results.forEach((r,i)=>{
+    const tr = document.createElement('tr');
+    const isRef = r.label.includes('⟨ref⟩');
+    tr.innerHTML = `
+      <td>${isRef ? '—' : i+1}</td>
+      <td>${r.label}${isRef ? ' <span style="font-size:10px;color:var(--muted)">(not a learnable skill)</span>' : ''}</td>
+      <td class="${r.delta>=0?'pos':'neg'}">${r.delta>=0?'+':''}$${Math.round(Math.abs(r.delta)/100)*100 >= 1000 ? (Math.round(r.delta/100)*100/1000).toFixed(1)+'k' : Math.round(r.delta)}</td>
+      <td>$${Math.round(r.newExp/1000)}k</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('recNotReady').style.display = 'none';
+  document.getElementById('recArea').style.display = 'block';
+}
+
+function resetForm(){
+  document.getElementById('resultArea').style.display = 'none';
+  document.getElementById('recNotReady').style.display = 'block';
+  document.getElementById('recArea').style.display = 'none';
+  currentProba = null; currentFeats = null;
+}
+
+function buildFeatChart(){
+  const sorted = Object.entries(FEAT_IMPORTANCE).sort((a,b)=>b[1]-a[1]);
+  const labels = sorted.map(([f])=>f.replace(/_/g,' ').replace('ICorPM ','').substring(0,22));
+  const vals = sorted.map(([,v])=>v);
+  const colors = vals.map((_,i)=>`rgba(88,166,255,${0.4+0.6*(1-i/vals.length)})`);
+  new Chart(document.getElementById('featChart'),{
+    type:'bar',
+    data:{labels,datasets:[{data:vals,backgroundColor:colors,borderRadius:3,borderSkipped:false}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:'rgba(48,54,61,0.5)'},ticks:{color:'#8b949e'},title:{display:true,text:'Mean |coefficient| across 14 threshold classifiers',color:'#8b949e'}},
+        y:{grid:{display:false},ticks:{color:'#c9d1d9',font:{size:10}}}
+      }
+    }
+  });
+}
+
+// Init Chart.js defaults
+Chart.defaults.color = '#8b949e';
+Chart.defaults.font.family = 'Inter,system-ui,sans-serif';
+Chart.defaults.font.size = 11;
+</script>
+</body>
+</html>
